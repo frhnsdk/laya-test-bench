@@ -1,7 +1,9 @@
 # Model weights and large binaries — not tracked in git
 model-bundle/
 dist/
+models/
 *.tar
+*.safetensors
 
 # Runtime data
 data/
