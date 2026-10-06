@@ -1,0 +1,11 @@
+# Works on any machine (CPU). start_docker.bat adds docker-compose.gpu.yml when an NVIDIA GPU is present.
+services:
+  laya:
+    build: .
+    image: laya-testbench
+    container_name: laya-testbench
+    ports:
+      - "127.0.0.1:8000:8000"     # only this PC can reach it
+    volumes:
+      - ./data:/app/data          # optional: keeps feedback.jsonl on the host
+    restart: unless-stopped

@@ -1,0 +1,21 @@
+# Model weights and large binaries — not tracked in git
+model-bundle/
+dist/
+*.tar
+
+# Runtime data
+data/
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Server logs
+server.out
+server.err
+
+# OS
+.DS_Store
+Thumbs.db

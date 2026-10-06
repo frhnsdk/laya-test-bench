@@ -1,0 +1,26 @@
+LAYA TEST BENCH - how to share and run it
+==========================================
+
+The Docker image "laya-testbench" contains everything: Python, PyTorch, Laya and all three
+model checkpoints (english, multilingual, typed-decisions). Nothing is downloaded when it runs.
+
+Make a file to give to someone (about 5 GB, already made: dist\laya-testbench.tar):
+    docker save laya-testbench -o laya-testbench.tar
+
+On the other PC (needs Docker Desktop; an NVIDIA GPU is optional):
+    docker load -i laya-testbench.tar        (takes a few minutes)
+
+    With an NVIDIA GPU:   docker run -d --name laya -p 127.0.0.1:8000:8000 --gpus all laya-testbench
+    Without a GPU (CPU):  docker run -d --name laya -p 127.0.0.1:8000:8000 laya-testbench
+
+Then open http://127.0.0.1:8000
+The page has a "Run on: GPU | CPU" switch. The GPU button is greyed out when no GPU is available.
+
+To keep the thumbs up/down feedback file outside the container, add:  -v "%cd%\data:/app/data"
+To start it again later:   docker start laya
+To stop it:                docker stop laya
+
+On your own PC, start_docker.bat / stop_docker.bat do the same using docker-compose.
+
+Licences: the Laya model weights are Apache-2.0 (convaiinnovations/laya on Hugging Face).
+PyTorch and the NVIDIA CUDA libraries inside the image have their own licences.

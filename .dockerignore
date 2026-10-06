@@ -1,0 +1,9 @@
+.venv
+laya-src
+models
+data
+*.err
+*.out
+__pycache__
+*.bat
+model-bundle/*.md

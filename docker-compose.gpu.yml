@@ -1,0 +1,10 @@
+# Adds the NVIDIA GPU. Used together with docker-compose.yml.
+services:
+  laya:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

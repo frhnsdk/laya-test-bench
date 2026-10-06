@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laya Test Bench</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #fff; --ink: #14171f; --muted: #667085; --line: #e3e6ec;
+    --accent: #3b5bdb; --ok: #2f9e44; --warn: #e8890c; --bad: #d6336c; --bar: #dbe4ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1218; --card: #181c25; --ink: #eceff4; --muted: #98a2b3; --line: #2a303c;
+            --accent: #7c96ff; --ok: #51cf66; --warn: #ffa94d; --bad: #f783ac; --bar: #26305a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+          padding: 16px; margin-bottom: 16px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+       margin: 0 0 10px; }
+  textarea, input, select { width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+       border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  textarea { min-height: 84px; resize: vertical; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+  .row > * { flex: 0 0 auto; width: auto; }
+  label { color: var(--muted); font-size: 13px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+           border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .q { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 12px; }
+  .q:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+  .q h3 { font-size: 15px; margin: 0 0 2px; }
+  .q .ins { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+  .bar { position: relative; height: 26px; border-radius: 6px; background: var(--bg);
+         margin: 4px 0; overflow: hidden; }
+  .bar i { position: absolute; inset: 0 auto 0 0; background: var(--bar); }
+  .bar.top i { background: var(--accent); opacity: .85; }
+  .bar span { position: relative; display: flex; justify-content: space-between; padding: 3px 10px; font-size: 13px; }
+  .badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; color: #fff; margin-left: 8px; }
+  .badge.act { background: var(--ok); } .badge.human { background: var(--warn); }
+  .stats { display: flex; gap: 20px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+  .stats b { color: var(--ink); }
+  .fb { margin-top: 6px; display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+  .fb button { padding: 2px 10px; }
+  .err { color: var(--bad); white-space: pre-wrap; }
+  details { margin-top: 10px; } summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  pre { overflow: auto; font-size: 12px; background: var(--bg); padding: 10px; border-radius: 8px; }
+  .item { display: flex; gap: 6px; margin: 4px 0; } .item input { flex: 1; }
+  .item button { padding: 2px 10px; }
+  .pill { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; vertical-align: middle;
+          margin-left: 8px; color: #fff; }
+  .pill.wait { background: var(--warn); } .pill.ok { background: var(--ok); } .pill.bad { background: var(--bad); }
+  .fb input { width: 160px; padding: 2px 8px; }
+  .drop { border: 2px dashed var(--line); border-radius: 12px; padding: 22px; text-align: center; cursor: pointer;
+          color: var(--muted); transition: border-color .15s, background .15s; }
+  .drop:hover, .drop.over, .drop:focus { border-color: var(--accent); background: var(--bar); outline: 0; }
+  .drop.has { border-style: solid; }
+  .progress { height: 6px; background: var(--bg); border-radius: 99px; overflow: hidden; margin: 12px 0; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .bulk { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+  .bulk th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px 8px; position: sticky; top: 0;
+             background: var(--card); border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .bulk td { padding: 5px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+  .bulk td.t { max-width: 360px; }
+  .bulk .lo { color: var(--warn); } .bulk .hi { color: var(--ink); }
+  .bulk small { color: var(--muted); }
+  .seg { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+         margin-left: auto; }
+  .seg span { padding: 0 10px; color: var(--muted); font-size: 13px; }
+  .seg button { border: 0; border-left: 1px solid var(--line); border-radius: 0; padding: 8px 16px; }
+  .seg button.on { background: var(--accent); color: #fff; font-weight: 600; }
+  .seg button:disabled:not(.on) { opacity: .4; cursor: not-allowed; }
+  .hist td { padding: 4px 8px; border-top: 1px solid var(--line); font-size: 13px; }
+  .hist table { width: 100%; border-collapse: collapse; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Laya Test Bench <span id="pill" class="pill wait">starting…</span></h1>
+  <p class="sub">Type a sentence. Laya reads it once and answers your questions with probabilities. Nothing is written or explained.</p>
+
+  <div class="card">
+    <h2>Sentence</h2>
+    <textarea id="text" placeholder="e.g. I was charged twice for my order and I want a refund today."></textarea>
+    <div class="row">
+      <button class="primary" id="go">Analyse</button>
+      <select id="ex"><option value="">Load a demo sentence…</option></select>
+      <button id="runAll" title="Runs all 10 demo sentences and lists them in History">Run all 10</button>
+      <label>Checkpoint
+        <select id="model">
+          <option value="">auto-route</option>
+          <option value="english">english</option>
+          <option value="multilingual">multilingual</option>
+          <option value="typed-decisions">typed-decisions</option>
+        </select>
+      </label>
+      <label>Auto-act threshold <b id="thv">0.80</b>
+        <input type="range" id="thr" min="0.5" max="0.99" step="0.01" value="0.8">
+      </label>
+      <div class="seg" id="dev" role="group" aria-label="Run on">
+        <span>Run on</span>
+        <button data-d="cuda" disabled>GPU</button><button data-d="cpu" disabled>CPU</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your questions</h2>
+      <div id="editor"></div>
+      <div class="row">
+        <button id="addChoice">+ choice</button>
+        <button id="addNoul">+ yes/no</button>
+        <button id="addScore">+ score</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Answers</h2>
+      <div id="out" class="sub">No answer yet.</div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Bulk analyse a CSV</h2>
+    <div id="drop" class="drop" tabindex="0">
+      <b>Drop a CSV file here</b> or click to choose one
+      <div class="ins" id="dropInfo">One sentence per row. A column named text, sentence, message or comment is picked automatically. No file handy? <a href="/sample.csv" download>Download a sample CSV</a>.</div>
+      <input type="file" id="file" accept=".csv,.tsv,.txt,text/csv" hidden>
+    </div>
+    <div class="row" id="bulkCtl" hidden>
+      <label>Text column <select id="col"></select></label>
+      <button class="primary" id="bulkGo">Analyse all</button>
+      <button id="bulkDl" disabled>Download results CSV</button>
+      <label><input type="checkbox" id="onlyLow"> show only "needs human"</label>
+      <span class="ins" id="bulkStat"></span>
+    </div>
+    <div class="progress" id="prog" hidden><i id="progBar"></i></div>
+    <div style="overflow:auto"><table id="bulkTbl" class="bulk"></table></div>
+  </div>
+
+  <div class="card hist">
+    <h2>History <span style="text-transform:none;letter-spacing:0">(👍 / 👎 saves to data/feedback.jsonl for fine-tuning)</span></h2>
+    <table id="hist"></table>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// The questions the page will ask. Editable; saved in this browser only.
+let Q = [
+  { name: "department", type: "choice", ins: "Which department should handle this?",
+    options: ["billing", "technical", "sales", "other"] },
+  { name: "urgent", type: "noul", ins: "Is this urgent?" },
+  { name: "refund", type: "noul", ins: "Does the person ask for a refund?" },
+  { name: "frustration", type: "score", ins: "How frustrated is the person?",
+    options: ["calm", "annoyed", "very angry"] },
+];
+try { const s = JSON.parse(localStorage.getItem("laya-q")); if (Array.isArray(s) && s.length) Q = s; } catch {}
+const save = () => { try { localStorage.setItem("laya-q", JSON.stringify(Q)); } catch {} };
+
+function renderEditor() {
+  $("#editor").innerHTML = Q.map((q, i) => `
+    <div class="q">
+      <div class="item">
+        <input data-i="${i}" data-f="name" value="${esc(q.name)}" title="name">
+        <button data-del="${i}">✕</button>
+      </div>
+      <input data-i="${i}" data-f="ins" value="${esc(q.ins)}" placeholder="question">
+      ${q.type !== "noul" ? `<input data-i="${i}" data-f="options" value="${esc(q.options.join(", "))}"
+         placeholder="options, comma separated">` : ""}
+      <label>${q.type === "noul" ? "yes/no" : q.type}</label>
+    </div>`).join("");
+}
+$("#editor").addEventListener("input", (e) => {
+  const { i, f } = e.target.dataset; if (i === undefined) return;
+  Q[i][f] = f === "options" ? e.target.value.split(",").map((s) => s.trim()).filter(Boolean) : e.target.value;
+  save();
+});
+$("#editor").addEventListener("click", (e) => {
+  if (e.target.dataset.del === undefined) return;
+  Q.splice(+e.target.dataset.del, 1); save(); renderEditor();
+});
+const add = (type) => () => {
+  const n = Q.length + 1;
+  Q.push(type === "noul" ? { name: "check" + n, type, ins: "Is this true?" }
+       : { name: "q" + n, type, ins: "Question?", options: ["a", "b", "c"] });
+  save(); renderEditor();
+};
+$("#addChoice").onclick = add("choice"); $("#addNoul").onclick = add("noul"); $("#addScore").onclick = add("score");
+
+function buildQuestions() {
+  const out = {};
+  for (const q of Q) {
+    if (q.type === "choice") out[q.name] = { type: "choice", instructions: q.ins,
+      criteria: Object.fromEntries(q.options.map((o) => [o, o])) };
+    else if (q.type === "score") out[q.name] = { type: "score", instructions: q.ins, criteria: q.options };
+    else out[q.name] = { type: "noul", instructions: q.ins };
+  }
+  return out;
+}
+
+const thr = () => +$("#thr").value;
+$("#thr").oninput = () => { $("#thv").textContent = thr().toFixed(2); if (results.length) renderBulk(); };
+
+function bars(entries, topKey) {
+  return entries.map(([k, p]) => `
+    <div class="bar ${k === topKey ? "top" : ""}"><i style="width:${(p * 100).toFixed(1)}%"></i>
+      <span><b>${esc(k)}</b><span>${(p * 100).toFixed(1)}%</span></span></div>`).join("");
+}
+const badge = (conf) => `<span class="badge ${conf >= thr() ? "act" : "human"}">${conf >= thr() ? "auto-act" : "needs human"}</span>`;
+
+let last = null;
+function show(res, text) {
+  last = { res, text };
+  const answers = res.result.answers || {};
+  $("#out").className = "";
+  $("#out").innerHTML = (res.result.note ? `<div class="ins" style="color:var(--warn)">${esc(res.result.note)}</div>` : "") + Q.map((q) => {
+    const a = answers[q.name]; if (!a) return "";
+    let body = "", pred = "";
+    if (q.type === "choice") {
+      const probs = a.probabilities || {};
+      pred = a.choice;
+      body = bars(Object.entries(probs).sort((x, y) => y[1] - x[1]), a.choice);
+      body += `<div class="ins">confidence ${((a.confidence ?? probs[a.choice] ?? 0) * 100).toFixed(1)}%${badge(a.confidence ?? probs[a.choice] ?? 0)}</div>`;
+    } else if (q.type === "noul") {
+      const p = a.noul ?? a.probability ?? 0; pred = p >= 0.5 ? "yes" : "no";
+      const conf = Math.max(p, 1 - p);
+      body = bars([["yes", p], ["no", 1 - p]], pred) + `<div class="ins">${badge(conf)}</div>`;
+    } else {
+      const s = a.score; pred = String(s);
+      body = `<div class="ins">score <b>${typeof s === "number" ? s.toFixed(2) : esc(s)}</b> of ${q.options.length - 1}
+              ${a.confidence != null ? badge(a.confidence) : ""}</div>`;
+    }
+    return `<div class="q"><h3>${esc(q.name)}</h3><div class="ins">${esc(q.ins)}</div>${body}
+      <div class="fb">correct? <button data-fb="up" data-q="${esc(q.name)}" data-p="${esc(pred)}">👍</button>
+      <button data-fb="down" data-q="${esc(q.name)}" data-p="${esc(pred)}">👎</button></div></div>`;
+  }).join("") + `<details><summary>raw response</summary><pre>${esc(JSON.stringify(res.result, null, 2))}</pre></details>`;
+  const r = res.result.routing || {};
+  $("#stats").innerHTML = `<span>wall <b>${res.wall_ms} ms</b></span><span>device <b>${esc(res.device)}</b></span>` +
+    (r.model ? `<span>checkpoint <b>${esc(r.model)}</b></span>` : "");
+}
+
+const history = [];
+function addHistory(text, res) {
+  const top = Object.entries(res.result.answers || {}).map(([k, a]) =>
+    `${k}: ${a.choice ?? (a.noul != null ? (a.noul * 100).toFixed(0) + "%" : a.score?.toFixed?.(1))}`).join(" · ");
+  history.unshift(`<tr><td>${esc(text.slice(0, 80))}</td><td>${esc(top)}</td><td>${res.wall_ms} ms</td></tr>`);
+  $("#hist").innerHTML = history.slice(0, 30).join("");
+}
+
+$("#go").onclick = async () => {
+  const text = $("#text").value.trim(); if (!text) return;
+  $("#go").disabled = true; $("#out").className = "sub"; $("#out").textContent = "Thinking… (first run loads the model)";
+  try {
+    const r = await fetch("/api/predict", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text, questions: buildQuestions(), model: $("#model").value || null }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.detail || r.statusText);
+    show(j, text); addHistory(text, j);
+  } catch (e) { $("#out").className = "err"; $("#out").textContent = e.message; }
+  $("#go").disabled = false;
+};
+$("#text").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("#go").click(); });
+
+async function sendFeedback(q, p, verdict, correct) {
+  await fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text: last.text, question: q, predicted: p, correct: correct || null,
+      verdict, model: $("#model").value || null }) });
+}
+$("#out").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-fb], button[data-save]"); if (!b || !last) return;
+  const box = b.closest(".fb");
+  if (b.dataset.fb === "up") {
+    await sendFeedback(b.dataset.q, b.dataset.p, "up");
+    box.innerHTML = "👍 saved";
+  } else if (b.dataset.fb === "down") {
+    // Ask for the right answer inline (no browser pop-up).
+    box.innerHTML = `correct answer: <input placeholder="optional"> <button data-save data-q="${esc(b.dataset.q)}"
+      data-p="${esc(b.dataset.p)}">save 👎</button>`;
+    box.querySelector("input").focus();
+  } else {
+    await sendFeedback(b.dataset.q, b.dataset.p, "down", box.querySelector("input").value.trim());
+    box.innerHTML = "👎 saved";
+  }
+});
+
+// Model status: the button stays disabled until the server reports the model is warm.
+let pollTimer = null;
+function drawDevice(s) {
+  for (const b of document.querySelectorAll("#dev button")) {
+    const gpu = b.dataset.d === "cuda";
+    b.classList.toggle("on", b.dataset.d === s.kind);
+    b.disabled = s.loading || (gpu && !s.gpu_available);
+    b.title = gpu && !s.gpu_available ? "No GPU is available to this server" : gpu && s.gpu_name ? s.gpu_name : "";
+  }
+}
+async function poll() {
+  clearTimeout(pollTimer);
+  try {
+    const s = await (await fetch("/api/status")).json();
+    const pill = $("#pill");
+    drawDevice(s);
+    if (s.error) { pill.className = "pill bad"; pill.textContent = "error"; $("#out").className = "err"; $("#out").textContent = s.error; return; }
+    for (const opt of $("#model").options) if (opt.value) opt.disabled = !(opt.value in s.models);
+    if (s.ready) {
+      pill.className = "pill ok"; pill.textContent = `ready · ${s.device}`;
+      pill.title = Object.entries(s.models).map(([k, v]) => `${k}: ${v}`).join("\n");
+      $("#go").disabled = false; return;
+    }
+    $("#go").disabled = true;
+    pill.className = "pill wait";
+    pill.textContent = "loading " + (Object.entries(s.models).find(([, v]) => v === "loading")?.[0] || "model") +
+      (s.kind ? " on " + (s.kind === "cuda" ? "GPU" : "CPU") : "") + "…";
+  } catch { $("#pill").className = "pill bad"; $("#pill").textContent = "server offline"; }
+  pollTimer = setTimeout(poll, 700);
+}
+$("#dev").onclick = async (e) => {
+  const b = e.target.closest("button[data-d]"); if (!b || b.disabled || b.classList.contains("on")) return;
+  $("#go").disabled = true; $("#pill").className = "pill wait"; $("#pill").textContent = "switching…";
+  for (const x of document.querySelectorAll("#dev button")) x.disabled = true;
+  try {
+    const r = await fetch("/api/device", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ device: b.dataset.d }) });
+    if (!r.ok) throw new Error((await r.json()).detail);
+  } catch (err) { $("#out").className = "err"; $("#out").textContent = err.message; }
+  poll();
+};
+
+// Demo sentences (also saved in data/demo_texts.txt).
+const EXAMPLES = [
+  "I was charged twice for my order, please refund me today.",
+  "The app crashes every time I open the settings page.",
+  "Do you offer discounts if we buy 50 licenses?",
+  "Thanks, that fixed it. Great support!",
+  "I hate your system.",
+  "Oh great, another outage. Just what I needed today.",
+  "Could you tell me your opening hours?",
+  "My payment failed and my account locks at midnight!",
+  "Mein Konto wurde zweimal belastet, bitte erstatten Sie den Betrag.",
+  "আমার অর্ডার এখনও আসেনি, টাকা ফেরত চাই",
+];
+$("#ex").innerHTML += EXAMPLES.map((t, i) => `<option value="${i}">${i + 1}. ${esc(t.slice(0, 50))}</option>`).join("");
+$("#ex").onchange = () => { if ($("#ex").value !== "") { $("#text").value = EXAMPLES[+$("#ex").value]; $("#ex").value = ""; } };
+
+async function analyse(text) {
+  const r = await fetch("/api/predict", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text, questions: buildQuestions(), model: $("#model").value || null }) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.detail || r.statusText);
+  show(j, text); addHistory(text, j);
+}
+$("#runAll").onclick = async () => {
+  $("#runAll").disabled = $("#go").disabled = true;
+  try { for (const t of EXAMPLES) { $("#text").value = t; await analyse(t); } }
+  catch (e) { $("#out").className = "err"; $("#out").textContent = e.message; }
+  $("#runAll").disabled = $("#go").disabled = false;
+};
+
+// ---------------------------------------------------------------- bulk CSV
+const NAMES = ["text", "sentence", "message", "comment", "review", "body", "content", "utterance", "query", "input"];
+let table = [], head = [], hasHeader = false, results = [];  // table = rows of cells
+
+function parseCSV(src) {  // RFC 4180: quotes, "" escapes, commas/tabs/semicolons, CRLF
+  src = src.replace(/^﻿/, "");
+  const first = src.split(/\r?\n/, 1)[0];
+  const delim = [",", "\t", ";"].map((d) => [d, first.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (q) {
+      if (c === '"') { if (src[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c;
+    } else if (c === '"' && cell === "") q = true;
+    else if (c === delim) { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && src[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+    else cell += c;
+  }
+  if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter((r) => r.some((c) => c.trim() !== ""));
+}
+const toCSV = (rows) => rows.map((r) => r.map((c) => {
+  c = c == null ? "" : String(c);
+  return /[",\r\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c;
+}).join(",")).join("\r\n");
+
+function loadCSV(name, src) {
+  table = parseCSV(src);
+  if (!table.length) { $("#dropInfo").textContent = "That file has no rows."; return; }
+  hasHeader = table[0].some((c) => NAMES.includes(c.trim().toLowerCase())) ||
+              (table[0].length > 1 && table[0].every((c) => c.trim() !== "" && isNaN(+c) && c.length < 30));
+  head = hasHeader ? table[0].map((c, i) => c.trim() || "column " + (i + 1)) : table[0].map((_, i) => "column " + (i + 1));
+  const body = hasHeader ? table.slice(1) : table;
+  let pick = head.findIndex((h) => NAMES.includes(h.toLowerCase()));
+  if (pick < 0) {  // otherwise: the column with the longest average text
+    const avg = head.map((_, i) => body.reduce((s, r) => s + (r[i] || "").length, 0) / Math.max(body.length, 1));
+    pick = avg.indexOf(Math.max(...avg));
+  }
+  $("#col").innerHTML = head.map((h, i) => `<option value="${i}">${esc(h)}</option>`).join("");
+  $("#col").value = pick;
+  $("#drop").classList.add("has");
+  $("#dropInfo").textContent = `${name}: ${body.length} rows loaded. Check the text column, then click Analyse all.`;
+  $("#bulkCtl").hidden = false; $("#bulkDl").disabled = true; $("#bulkStat").textContent = "";
+  results = []; $("#bulkTbl").innerHTML = ""; $("#prog").hidden = true;
+}
+function readFile(f) {
+  if (!f) return;
+  if (f.size > 20e6) { $("#dropInfo").textContent = "File too large (max 20 MB)."; return; }
+  const r = new FileReader(); r.onload = () => loadCSV(f.name, r.result); r.readAsText(f, "utf-8");
+}
+const drop = $("#drop");
+drop.onclick = (e) => { if (!e.target.closest("a")) $("#file").click(); };
+drop.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") $("#file").click(); };
+$("#file").onchange = (e) => readFile(e.target.files[0]);
+["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => readFile(e.dataTransfer.files[0]));
+// Dropping a file anywhere else on the page must not make the browser open it.
+["dragover", "drop"].forEach((t) => window.addEventListener(t, (e) => e.preventDefault()));
+
+function renderBulk() {
+  const qs = Q.map((q) => q.name), body = hasHeader ? table.slice(1) : table, c = +$("#col").value;
+  const only = $("#onlyLow").checked, th = thr();
+  const cell = (a, q) => {
+    if (!a) return "";
+    const conf = a.confidence, low = conf != null && conf < th;
+    const lab = typeof a.label === "number" ? a.label.toFixed(2) : a.label;
+    return `<span class="${low ? "lo" : "hi"}">${esc(lab)}</span> <small>${conf != null ? (conf * 100).toFixed(0) + "%" : ""}</small>`;
+  };
+  let shown = 0;
+  const rows = body.map((r, i) => {
+    const res = results[i]; if (!res) return "";
+    const low = Object.values(res.answers || {}).some((a) => a.confidence != null && a.confidence < th);
+    if (only && !low) return "";
+    shown++;
+    return `<tr><td>${i + 1}</td><td class="t">${esc(r[c] || "")}</td><td><small>${esc(res.model || "")}</small></td>` +
+      qs.map((n) => `<td>${cell(res.answers?.[n])}</td>`).join("") + "</tr>";
+  }).join("");
+  $("#bulkTbl").innerHTML = `<tr><th>#</th><th>text</th><th>model</th>${qs.map((n) => `<th>${esc(n)}</th>`).join("")}</tr>` + rows;
+  return shown;
+}
+$("#onlyLow").onchange = renderBulk;
+
+$("#bulkGo").onclick = async () => {
+  const body = hasHeader ? table.slice(1) : table, c = +$("#col").value;
+  const texts = body.map((r) => (r[c] || "").trim());
+  results = new Array(texts.length).fill(null);
+  $("#bulkGo").disabled = $("#bulkDl").disabled = true; $("#prog").hidden = false; $("#progBar").style.width = "0";
+  const questions = buildQuestions(), model = $("#model").value || null, CH = 100, t0 = performance.now();
+  try {
+    for (let i = 0; i < texts.length; i += CH) {
+      const r = await fetch("/api/batch", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ texts: texts.slice(i, i + CH), questions, model }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.detail || r.statusText);
+      j.rows.forEach((row, k) => { results[i + k] = row; });
+      $("#progBar").style.width = Math.min(100, (i + CH) / texts.length * 100) + "%";
+      $("#bulkStat").textContent = `${Math.min(i + CH, texts.length)} / ${texts.length}`;
+      renderBulk();
+    }
+    const s = (performance.now() - t0) / 1000;
+    const low = results.filter((x) => x && Object.values(x.answers || {}).some((a) => a.confidence != null && a.confidence < thr())).length;
+    $("#bulkStat").textContent = `${texts.length} sentences in ${s.toFixed(1)} s (${(texts.length / s).toFixed(0)}/s) · ${low} need a human at ${thr().toFixed(2)}`;
+    $("#bulkDl").disabled = false;
+  } catch (e) { $("#bulkStat").textContent = ""; $("#bulkTbl").innerHTML = `<tr><td class="err">${esc(e.message)}</td></tr>`; }
+  $("#bulkGo").disabled = false;
+};
+
+$("#bulkDl").onclick = () => {
+  const qs = Q.map((q) => q.name), body = hasHeader ? table.slice(1) : table;
+  const out = [[...head, "model", ...qs.flatMap((n) => [n, n + "_confidence"])]];
+  body.forEach((r, i) => {
+    const res = results[i] || {};
+    out.push([...head.map((_, k) => r[k] ?? ""), res.model ?? "",
+      ...qs.flatMap((n) => { const a = res.answers?.[n]; return [a ? a.label : "", a?.confidence != null ? a.confidence.toFixed(4) : ""]; })]);
+  });
+  const blob = new Blob(["﻿" + toCSV(out)], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "laya_results.csv"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+$("#go").disabled = true;
+renderEditor();
+poll();
+</script>
+</body>
+</html>
